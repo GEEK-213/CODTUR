@@ -1,8 +1,7 @@
 export default function handler(req, res) {
   if (req.method === "POST") {
     try {
-      const userMessage = req.body.text; // frontend sends { text: "..." }
-
+      const userMessage = req.body.text;
       res.status(200).json({ reply: `CodeMentor says: ${userMessage}` });
     } catch (error) {
       console.error("Error handling message:", error);
