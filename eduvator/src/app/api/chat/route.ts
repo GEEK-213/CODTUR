@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "'message' is required" }, { status: 400 });
   }
 
-  // 1) Try Botpress first
+
   const BOTPRESS_URL = process.env.BOTPRESS_URL;
   const BOTPRESS_TOKEN = process.env.BOTPRESS_TOKEN;
   let botpressReply = "";
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ reply: botpressReply });
   }
 
-  // 2) Fallback to OpenAI
+  
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
   if (!OPENAI_API_KEY) {
     return NextResponse.json({ reply: "🧠 AI not configured yet." });
