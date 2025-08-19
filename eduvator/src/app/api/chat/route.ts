@@ -80,64 +80,70 @@
 // }
 
 
-// src/app/api/chat/route.ts
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json()
+    const { message } = await req.json()
 
-    // 1. If Botpress is configured → use Botpress
-    if (process.env.BOTPRESS_URL && process.env.BOTPRESS_TOKEN) {
-      const response = await fetch(`${process.env.BOTPRESS_URL}/api/v1/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.BOTPRESS_TOKEN}`,
-        },
-        body: JSON.stringify({ messages }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Botpress API failed")
-      }
-
-      const data = await response.json()
-      return NextResponse.json({ reply: data.reply || "Botpress response" })
-    }
-
-    // 2. If OpenAI is configured → use OpenAI
+    // 1) Try OpenAI
     if (process.env.OPENAI_API_KEY) {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages,
-        }),
-      })
+      try {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: message }]
+          })
+        })
 
-      if (!response.ok) {
-        throw new Error("OpenAI API failed")
+        if (res.ok) {
+          const data = await res.json()
+          const reply = data.choices?.[0]?.message?.content ?? "⚠️ No response from OpenAI"
+          return NextResponse.json({ reply })
+        }
+      } catch (err) {
+        console.error("OpenAI error:", err)
       }
-
-      const data = await response.json()
-      return NextResponse.json({
-        reply: data.choices[0].message?.content || "OpenAI response",
-      })
     }
 
-    // 3. Fallback → Echo (so your chat never breaks)
-    const lastMsg = messages[messages.length - 1]?.content || "Hello!"
-    return NextResponse.json({ reply: `Echo: ${lastMsg}` })
+    // 2) Try Botpress
+    if (process.env.BOTPRESS_URL && process.env.BOTPRESS_TOKEN) {
+      try {
+        const res = await fetch(process.env.BOTPRESS_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.BOTPRESS_TOKEN}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ type: "text", text: message })
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          const reply = data.responses?.[0]?.text ?? "⚠️ No response from Botpress"
+          return NextResponse.json({ reply })
+        }
+      } catch (err) {
+        console.error("Botpress error:", err)
+      }
+    }
+
+    // 3) Fallback → echo (never breaks)
+    return NextResponse.json({
+      reply: `Echo: ${message} ✅`
+    })
+
   } catch (err) {
-    console.error("Error in chat route:", err)
-    return NextResponse.json(
-      { reply: "Something went wrong on the server." },
-      { status: 500 }
-    )
+    console.error("Unexpected error:", err)
+    return NextResponse.json({ reply: "⚠️ Server error" }, { status: 500 })
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ message: "Chat API is alive 🚀 (Vercel)" })
 }
