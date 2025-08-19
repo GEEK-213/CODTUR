@@ -80,31 +80,64 @@
 // }
 
 
-
-
-
+// src/app/api/chat/route.ts
 import { NextResponse } from "next/server"
 
-// ✅ Handle POST request (chat messages)
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const message = body.message || "No message received"
+    const { messages } = await req.json()
 
-    return NextResponse.json({
-      reply: `You said: ${message} ✅ (API working on Vercel)`
-    })
-  } catch (error) {
+    // 1. If Botpress is configured → use Botpress
+    if (process.env.BOTPRESS_URL && process.env.BOTPRESS_TOKEN) {
+      const response = await fetch(`${process.env.BOTPRESS_URL}/api/v1/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.BOTPRESS_TOKEN}`,
+        },
+        body: JSON.stringify({ messages }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Botpress API failed")
+      }
+
+      const data = await response.json()
+      return NextResponse.json({ reply: data.reply || "Botpress response" })
+    }
+
+    // 2. If OpenAI is configured → use OpenAI
+    if (process.env.OPENAI_API_KEY) {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("OpenAI API failed")
+      }
+
+      const data = await response.json()
+      return NextResponse.json({
+        reply: data.choices[0].message?.content || "OpenAI response",
+      })
+    }
+
+    // 3. Fallback → Echo (so your chat never breaks)
+    const lastMsg = messages[messages.length - 1]?.content || "Hello!"
+    return NextResponse.json({ reply: `Echo: ${lastMsg}` })
+  } catch (err) {
+    console.error("Error in chat route:", err)
     return NextResponse.json(
-      { error: "Invalid request" },
-      { status: 400 }
+      { reply: "Something went wrong on the server." },
+      { status: 500 }
     )
   }
-}
-
-// ✅ Handle GET request (for testing)
-export async function GET() {
-  return NextResponse.json({
-    message: "Chat API is alive 🚀 (Vercel)"
-  })
 }
