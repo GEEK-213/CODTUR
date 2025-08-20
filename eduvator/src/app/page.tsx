@@ -3,8 +3,11 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { GraduationCap, Bot } from "lucide-react"
+import { useRouter } from "next/navigation"
 
-export default function Dashboard({ onGoToEduvatorbot }: { onGoToEduvatorbot?: () => void }) {
+export default function Dashboard() {
+  const router = useRouter()
+
   return (
     <div className="min-h-screen relative bg-black text-white overflow-hidden flex flex-col items-center justify-center px-6">
       
@@ -50,13 +53,12 @@ export default function Dashboard({ onGoToEduvatorbot }: { onGoToEduvatorbot?: (
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-6 justify-center">
-         <Button
-  onClick={() => window.location.href = "/eduvatorbot"}
-  className="px-8 py-6 text-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full shadow-lg"
->
-  Chat with Eduvator Bot 🤖
-</Button>
-
+          <Button
+            onClick={() => router.push("/eduvatorbot")}
+            className="px-8 py-6 text-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full shadow-lg"
+          >
+            Chat with Eduvator Bot 🤖
+          </Button>
         </div>
       </motion.div>
     </div>
