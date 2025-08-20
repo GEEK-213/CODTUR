@@ -59,15 +59,6 @@ type EduvatorBotProps = {
   onBack: () => void;
 };
 
-export function EduvatorBot({ onBack }: EduvatorBotProps) {
-  return (
-    <div>
-      <button onClick={onBack} className="p-2 text-indigo-600 font-medium">
-        ← Back
-      </button>
-    </div>
-  );
-}
 
 export default function EduvatorChat() {
   // Theme
