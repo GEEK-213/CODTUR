@@ -17,11 +17,10 @@ import {
   Send,
   Sun,
   Moon,
-  ArrowLeft
+
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
+
 
 
 // ----------------------
